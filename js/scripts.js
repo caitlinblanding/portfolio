@@ -93,9 +93,6 @@ window.addEventListener('DOMContentLoaded', event => {
     // Image frame modal functionality
     const modals = document.querySelectorAll('#imageModal');
     let activeModal = null;
-    const expandedImage = document.getElementById('expandedImage');
-    const imageTitle = document.getElementById('imageTitle');
-    const closeBtn = document.querySelector('.close');
     const clickableFrames = document.querySelectorAll('.clickable-frame');
     let currentFrameIndex = -1;
     let touchStartX = 0;
@@ -104,6 +101,27 @@ window.addEventListener('DOMContentLoaded', event => {
     let isSwipeAnimating = false;
     let isTouchSwiping = false;
     let isHorizontalGesture = false;
+
+    const getModalForSection = function(section) {
+        if (!section) {
+            return null;
+        }
+
+        let sibling = section.nextElementSibling;
+        while (sibling) {
+            if (sibling.classList && sibling.classList.contains('image-modal')) {
+                return sibling;
+            }
+
+            if (sibling.classList && sibling.classList.contains('resume-section')) {
+                break;
+            }
+
+            sibling = sibling.nextElementSibling;
+        }
+
+        return null;
+    };
 
     const openModalAtIndex = function(index, shouldScrollToSection = false) {
         if (index < 0 || index >= clickableFrames.length) {
@@ -114,11 +132,25 @@ window.addEventListener('DOMContentLoaded', event => {
         const imageSrc = frame.getAttribute('data-image');
         const title = frame.getAttribute('data-title');
         const section = frame.closest('.resume-section');
+        const nextModal = getModalForSection(section);
         currentFrameIndex = index;
-        expandedImage.src = imageSrc;
-        imageTitle.textContent = title;
+        if (!nextModal) {
+            return;
+        }
 
-        activeModal = section.querySelector('#imageModal');
+        const expandedImage = nextModal.querySelector('#expandedImage');
+        const imageTitle = nextModal.querySelector('#imageTitle');
+        if (expandedImage) {
+            expandedImage.src = imageSrc;
+        }
+        if (imageTitle) {
+            imageTitle.textContent = title;
+        }
+
+        if (activeModal && activeModal !== nextModal) {
+            activeModal.classList.remove('active');
+        }
+        activeModal = nextModal;
         if (activeModal) {
             activeModal.classList.add('active');
         }
@@ -169,16 +201,23 @@ window.addEventListener('DOMContentLoaded', event => {
         });
     });
 
-    closeBtn.addEventListener('click', function() {
-        if (activeModal) {
-            activeModal.classList.remove('active');
-        }
-    });
-
     modals.forEach(modal => {
+        const closeBtn = modal.querySelector('.close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                modal.classList.remove('active');
+                if (activeModal === modal) {
+                    activeModal = null;
+                }
+            });
+        }
+
         modal.addEventListener('click', function(event) {
             if (event.target === modal) {
                 modal.classList.remove('active');
+                if (activeModal === modal) {
+                    activeModal = null;
+                }
             }
         });
     });
@@ -333,6 +372,7 @@ window.addEventListener('DOMContentLoaded', event => {
 
         if (event.key === 'Escape') {
             activeModal.classList.remove('active');
+            activeModal = null;
         }
 
         if (event.key === 'ArrowRight') {
