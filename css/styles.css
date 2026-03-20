@@ -10979,6 +10979,7 @@ h6,
   max-height: 98%;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   animation: slideIn 0.3s ease;
+  touch-action: none;
 }
 
 .modal-content-expanded img {
@@ -10987,6 +10988,9 @@ h6,
   height: auto;
   display: block;
   margin: 0 auto;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .modal-content-expanded img.swipe-out-left {

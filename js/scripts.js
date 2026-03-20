@@ -93,6 +93,7 @@ window.addEventListener('DOMContentLoaded', event => {
     // Image frame modal functionality
     const modal = document.getElementById('imageModal');
     const expandedImage = document.getElementById('expandedImage');
+    const modalContent = document.querySelector('.modal-content-expanded');
     const imageTitle = document.getElementById('imageTitle');
     const closeBtn = document.querySelector('.close');
     const clickableFrames = document.querySelectorAll('.clickable-frame');
@@ -134,9 +135,11 @@ window.addEventListener('DOMContentLoaded', event => {
     };
 
     const resetSwipeStyles = function() {
-        expandedImage.style.transition = '';
-        expandedImage.style.transform = '';
-        expandedImage.style.opacity = '';
+        if (modalContent) {
+            modalContent.style.transition = '';
+            modalContent.style.transform = '';
+            modalContent.style.opacity = '';
+        }
     };
 
     const navigateModal = function(direction) {
@@ -209,10 +212,12 @@ window.addEventListener('DOMContentLoaded', event => {
         const clampedDelta = Math.max(-maxDrag, Math.min(maxDrag, deltaX));
         const progress = Math.min(Math.abs(clampedDelta) / (window.innerWidth * 0.4), 1);
 
-        expandedImage.style.transition = 'none';
-        expandedImage.style.transform = `translateX(${clampedDelta}px)`;
-        expandedImage.style.opacity = `${1 - progress * 0.45}`;
-    }, { passive: false });
+        if (modalContent) {
+            modalContent.style.transition = 'none';
+            modalContent.style.transform = `translateX(${clampedDelta}px)`;
+            modalContent.style.opacity = `${1 - progress * 0.45}`;
+        }
+    }, false);
 
     modal.addEventListener('touchend', function(event) {
         if (!modal.classList.contains('active') || event.changedTouches.length !== 1 || isSwipeAnimating) {
@@ -228,9 +233,11 @@ window.addEventListener('DOMContentLoaded', event => {
         const shouldNavigate = Math.abs(touchDeltaX) >= minSwipeDistance;
 
         if (!shouldNavigate) {
-            expandedImage.style.transition = 'transform 0.18s ease, opacity 0.18s ease';
-            expandedImage.style.transform = 'translateX(0)';
-            expandedImage.style.opacity = '1';
+            if (modalContent) {
+                modalContent.style.transition = 'transform 0.18s ease, opacity 0.18s ease';
+                modalContent.style.transform = 'translateX(0)';
+                modalContent.style.opacity = '1';
+            }
             window.setTimeout(() => {
                 resetSwipeStyles();
             }, 190);
@@ -250,20 +257,26 @@ window.addEventListener('DOMContentLoaded', event => {
         const exitOffset = touchDeltaX < 0 ? -window.innerWidth * 0.45 : window.innerWidth * 0.45;
         const entryOffset = touchDeltaX < 0 ? window.innerWidth * 0.28 : -window.innerWidth * 0.28;
 
-        expandedImage.style.transition = 'transform 0.14s ease, opacity 0.14s ease';
-        expandedImage.style.transform = `translateX(${exitOffset}px)`;
-        expandedImage.style.opacity = '0';
+        if (modalContent) {
+            modalContent.style.transition = 'transform 0.14s ease, opacity 0.14s ease';
+            modalContent.style.transform = `translateX(${exitOffset}px)`;
+            modalContent.style.opacity = '0';
+        }
 
         window.setTimeout(() => {
             openModalAtIndex(nextIndex, true);
-            expandedImage.style.transition = 'none';
-            expandedImage.style.transform = `translateX(${entryOffset}px)`;
-            expandedImage.style.opacity = '0';
+            if (modalContent) {
+                modalContent.style.transition = 'none';
+                modalContent.style.transform = `translateX(${entryOffset}px)`;
+                modalContent.style.opacity = '0';
+            }
 
             window.requestAnimationFrame(() => {
-                expandedImage.style.transition = 'transform 0.18s ease, opacity 0.18s ease';
-                expandedImage.style.transform = 'translateX(0)';
-                expandedImage.style.opacity = '1';
+                if (modalContent) {
+                    modalContent.style.transition = 'transform 0.18s ease, opacity 0.18s ease';
+                    modalContent.style.transform = 'translateX(0)';
+                    modalContent.style.opacity = '1';
+                }
             });
 
             window.setTimeout(() => {
