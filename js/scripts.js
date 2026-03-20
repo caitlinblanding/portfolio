@@ -91,8 +91,14 @@ window.addEventListener('DOMContentLoaded', event => {
     window.setTimeout(syncMobileNavTitle, 0);
 
     // Image frame modal functionality
-    const modals = document.querySelectorAll('#imageModal');
-    let activeModal = null;
+    const modals = document.querySelectorAll('.image-modal');
+    const primaryModal = modals.length > 0 ? modals[0] : null;
+    modals.forEach((modal, index) => {
+        if (index > 0) {
+            modal.remove();
+        }
+    });
+    let activeModal = primaryModal;
     const clickableFrames = document.querySelectorAll('.clickable-frame');
     let currentFrameIndex = -1;
     let touchStartX = 0;
@@ -101,27 +107,6 @@ window.addEventListener('DOMContentLoaded', event => {
     let isSwipeAnimating = false;
     let isTouchSwiping = false;
     let isHorizontalGesture = false;
-
-    const getModalForSection = function(section) {
-        if (!section) {
-            return null;
-        }
-
-        let sibling = section.nextElementSibling;
-        while (sibling) {
-            if (sibling.classList && sibling.classList.contains('image-modal')) {
-                return sibling;
-            }
-
-            if (sibling.classList && sibling.classList.contains('resume-section')) {
-                break;
-            }
-
-            sibling = sibling.nextElementSibling;
-        }
-
-        return null;
-    };
 
     const openModalAtIndex = function(index, shouldScrollToSection = false) {
         if (index < 0 || index >= clickableFrames.length) {
@@ -132,14 +117,14 @@ window.addEventListener('DOMContentLoaded', event => {
         const imageSrc = frame.getAttribute('data-image');
         const title = frame.getAttribute('data-title');
         const section = frame.closest('.resume-section');
-        const nextModal = getModalForSection(section);
+        const nextModal = primaryModal;
         currentFrameIndex = index;
         if (!nextModal) {
             return;
         }
 
-        const expandedImage = nextModal.querySelector('#expandedImage');
-        const imageTitle = nextModal.querySelector('#imageTitle');
+        const expandedImage = nextModal.querySelector('img');
+        const imageTitle = nextModal.querySelector('.image-modal-title');
         if (expandedImage) {
             expandedImage.src = imageSrc;
         }
