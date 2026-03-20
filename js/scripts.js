@@ -99,6 +99,7 @@ window.addEventListener('DOMContentLoaded', event => {
     let currentFrameIndex = -1;
     let touchStartX = 0;
     let touchStartY = 0;
+    let isSwipeAnimating = false;
 
     const openModalAtIndex = function(index, shouldScrollToSection = false) {
         if (index < 0 || index >= clickableFrames.length) {
@@ -117,6 +118,39 @@ window.addEventListener('DOMContentLoaded', event => {
         if (shouldScrollToSection && section) {
             section.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+    };
+
+    const navigateModal = function(direction, animateSwipe = false) {
+        if (clickableFrames.length === 0 || currentFrameIndex < 0) {
+            return;
+        }
+
+        const nextIndex = direction === 'next'
+            ? (currentFrameIndex + 1) % clickableFrames.length
+            : (currentFrameIndex - 1 + clickableFrames.length) % clickableFrames.length;
+
+        if (!animateSwipe || !expandedImage || isSwipeAnimating) {
+            openModalAtIndex(nextIndex, true);
+            return;
+        }
+
+        isSwipeAnimating = true;
+        const outClass = direction === 'next' ? 'swipe-out-left' : 'swipe-out-right';
+        const inClass = direction === 'next' ? 'swipe-in-right' : 'swipe-in-left';
+
+        expandedImage.classList.remove('swipe-in-left', 'swipe-in-right', 'swipe-out-left', 'swipe-out-right');
+        expandedImage.classList.add(outClass);
+
+        window.setTimeout(() => {
+            openModalAtIndex(nextIndex, true);
+            expandedImage.classList.remove(outClass);
+            expandedImage.classList.add(inClass);
+
+            window.setTimeout(() => {
+                expandedImage.classList.remove(inClass);
+                isSwipeAnimating = false;
+            }, 180);
+        }, 140);
     };
 
     clickableFrames.forEach((frame, index) => {
@@ -162,9 +196,9 @@ window.addEventListener('DOMContentLoaded', event => {
         }
 
         if (deltaX < 0) {
-            openModalAtIndex((currentFrameIndex + 1) % clickableFrames.length, true);
+            navigateModal('next', true);
         } else {
-            openModalAtIndex((currentFrameIndex - 1 + clickableFrames.length) % clickableFrames.length, true);
+            navigateModal('previous', true);
         }
     }, { passive: true });
 
@@ -180,12 +214,12 @@ window.addEventListener('DOMContentLoaded', event => {
 
         if (event.key === 'ArrowRight') {
             event.preventDefault();
-            openModalAtIndex((currentFrameIndex + 1) % clickableFrames.length, true);
+            navigateModal('next');
         }
 
         if (event.key === 'ArrowLeft') {
             event.preventDefault();
-            openModalAtIndex((currentFrameIndex - 1 + clickableFrames.length) % clickableFrames.length, true);
+            navigateModal('previous');
         }
     });
 

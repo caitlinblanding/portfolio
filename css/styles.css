@@ -518,7 +518,7 @@ progress {
 
 @media (max-width: 991.98px) {
   .lead.mb-5 {
-    font-size: 1rem;
+    font-size: 1.1rem;
   }
   .subheading.mb-5 {
     font-size: 1rem;
@@ -10988,6 +10988,66 @@ h6,
   margin: 0 auto;
 }
 
+.modal-content-expanded img.swipe-out-left {
+  animation: modalSwipeOutLeft 0.14s ease forwards;
+}
+
+.modal-content-expanded img.swipe-out-right {
+  animation: modalSwipeOutRight 0.14s ease forwards;
+}
+
+.modal-content-expanded img.swipe-in-left {
+  animation: modalSwipeInLeft 0.18s ease forwards;
+}
+
+.modal-content-expanded img.swipe-in-right {
+  animation: modalSwipeInRight 0.18s ease forwards;
+}
+
+@keyframes modalSwipeOutLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-16%);
+    opacity: 0;
+  }
+}
+
+@keyframes modalSwipeOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(16%);
+    opacity: 0;
+  }
+}
+
+@keyframes modalSwipeInLeft {
+  from {
+    transform: translateX(-16%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes modalSwipeInRight {
+  from {
+    transform: translateX(16%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 .image-modal-title {
   text-align: center;
   margin-top: 4px;
@@ -11047,7 +11107,16 @@ h6,
   outline-color: #d48a6e;
 }
 
+.mobile-break {
+  display: none;
+}
+
 @media (max-width: 991.98px) {
+  .mobile-break {
+    display: block;
+    height: 0;
+  }
+
   #sideNav .navbar-toggler {
     border: none;
   }
