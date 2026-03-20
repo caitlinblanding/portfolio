@@ -99,7 +99,10 @@ window.addEventListener('DOMContentLoaded', event => {
     let currentFrameIndex = -1;
     let touchStartX = 0;
     let touchStartY = 0;
+    let touchDeltaX = 0;
     let isSwipeAnimating = false;
+    let isTouchSwiping = false;
+    let isHorizontalGesture = false;
 
     const openModalAtIndex = function(index, shouldScrollToSection = false) {
         if (index < 0 || index >= clickableFrames.length) {
@@ -120,37 +123,29 @@ window.addEventListener('DOMContentLoaded', event => {
         }
     };
 
-    const navigateModal = function(direction, animateSwipe = false) {
+    const getNextIndex = function(direction) {
         if (clickableFrames.length === 0 || currentFrameIndex < 0) {
-            return;
+            return -1;
         }
 
-        const nextIndex = direction === 'next'
+        return direction === 'next'
             ? (currentFrameIndex + 1) % clickableFrames.length
             : (currentFrameIndex - 1 + clickableFrames.length) % clickableFrames.length;
+    };
 
-        if (!animateSwipe || !expandedImage || isSwipeAnimating) {
-            openModalAtIndex(nextIndex, true);
+    const resetSwipeStyles = function() {
+        expandedImage.style.transition = '';
+        expandedImage.style.transform = '';
+        expandedImage.style.opacity = '';
+    };
+
+    const navigateModal = function(direction) {
+        const nextIndex = getNextIndex(direction);
+        if (nextIndex === -1 || isSwipeAnimating) {
             return;
         }
 
-        isSwipeAnimating = true;
-        const outClass = direction === 'next' ? 'swipe-out-left' : 'swipe-out-right';
-        const inClass = direction === 'next' ? 'swipe-in-right' : 'swipe-in-left';
-
-        expandedImage.classList.remove('swipe-in-left', 'swipe-in-right', 'swipe-out-left', 'swipe-out-right');
-        expandedImage.classList.add(outClass);
-
-        window.setTimeout(() => {
-            openModalAtIndex(nextIndex, true);
-            expandedImage.classList.remove(outClass);
-            expandedImage.classList.add(inClass);
-
-            window.setTimeout(() => {
-                expandedImage.classList.remove(inClass);
-                isSwipeAnimating = false;
-            }, 180);
-        }, 140);
+        openModalAtIndex(nextIndex, true);
     };
 
     clickableFrames.forEach((frame, index) => {
@@ -171,35 +166,118 @@ window.addEventListener('DOMContentLoaded', event => {
 
     // Swipe navigation on touch devices mirrors left/right arrow keys.
     modal.addEventListener('touchstart', function(event) {
-        if (!modal.classList.contains('active') || event.touches.length !== 1) {
+        if (!modal.classList.contains('active') || event.touches.length !== 1 || isSwipeAnimating) {
             return;
         }
 
         touchStartX = event.touches[0].clientX;
         touchStartY = event.touches[0].clientY;
+        touchDeltaX = 0;
+        isTouchSwiping = false;
+        isHorizontalGesture = false;
+        resetSwipeStyles();
     }, { passive: true });
 
+    modal.addEventListener('touchmove', function(event) {
+        if (!modal.classList.contains('active') || event.touches.length !== 1 || isSwipeAnimating) {
+            return;
+        }
+
+        const touchX = event.touches[0].clientX;
+        const touchY = event.touches[0].clientY;
+        const deltaX = touchX - touchStartX;
+        const deltaY = touchY - touchStartY;
+        const horizontalIntentThreshold = 8;
+
+        if (!isTouchSwiping) {
+            if (Math.abs(deltaX) < horizontalIntentThreshold && Math.abs(deltaY) < horizontalIntentThreshold) {
+                return;
+            }
+
+            isHorizontalGesture = Math.abs(deltaX) > Math.abs(deltaY);
+            isTouchSwiping = true;
+        }
+
+        if (!isHorizontalGesture) {
+            return;
+        }
+
+        event.preventDefault();
+        touchDeltaX = deltaX;
+
+        const maxDrag = window.innerWidth * 0.45;
+        const clampedDelta = Math.max(-maxDrag, Math.min(maxDrag, deltaX));
+        const progress = Math.min(Math.abs(clampedDelta) / (window.innerWidth * 0.4), 1);
+
+        expandedImage.style.transition = 'none';
+        expandedImage.style.transform = `translateX(${clampedDelta}px)`;
+        expandedImage.style.opacity = `${1 - progress * 0.45}`;
+    }, { passive: false });
+
     modal.addEventListener('touchend', function(event) {
-        if (!modal.classList.contains('active') || event.changedTouches.length !== 1) {
+        if (!modal.classList.contains('active') || event.changedTouches.length !== 1 || isSwipeAnimating) {
             return;
         }
 
-        const touchEndX = event.changedTouches[0].clientX;
-        const touchEndY = event.changedTouches[0].clientY;
-        const deltaX = touchEndX - touchStartX;
-        const deltaY = touchEndY - touchStartY;
-        const minSwipeDistance = 40;
-
-        // Ignore mostly vertical gestures so normal scroll behavior is preserved.
-        if (Math.abs(deltaX) < minSwipeDistance || Math.abs(deltaX) <= Math.abs(deltaY)) {
+        if (!isTouchSwiping || !isHorizontalGesture) {
+            resetSwipeStyles();
             return;
         }
 
-        if (deltaX < 0) {
-            navigateModal('next', true);
-        } else {
-            navigateModal('previous', true);
+        const minSwipeDistance = Math.min(120, window.innerWidth * 0.18);
+        const shouldNavigate = Math.abs(touchDeltaX) >= minSwipeDistance;
+
+        if (!shouldNavigate) {
+            expandedImage.style.transition = 'transform 0.18s ease, opacity 0.18s ease';
+            expandedImage.style.transform = 'translateX(0)';
+            expandedImage.style.opacity = '1';
+            window.setTimeout(() => {
+                resetSwipeStyles();
+            }, 190);
+            return;
         }
+
+        isSwipeAnimating = true;
+        const direction = touchDeltaX < 0 ? 'next' : 'previous';
+        const nextIndex = getNextIndex(direction);
+
+        if (nextIndex === -1) {
+            isSwipeAnimating = false;
+            resetSwipeStyles();
+            return;
+        }
+
+        const exitOffset = touchDeltaX < 0 ? -window.innerWidth * 0.45 : window.innerWidth * 0.45;
+        const entryOffset = touchDeltaX < 0 ? window.innerWidth * 0.28 : -window.innerWidth * 0.28;
+
+        expandedImage.style.transition = 'transform 0.14s ease, opacity 0.14s ease';
+        expandedImage.style.transform = `translateX(${exitOffset}px)`;
+        expandedImage.style.opacity = '0';
+
+        window.setTimeout(() => {
+            openModalAtIndex(nextIndex, true);
+            expandedImage.style.transition = 'none';
+            expandedImage.style.transform = `translateX(${entryOffset}px)`;
+            expandedImage.style.opacity = '0';
+
+            window.requestAnimationFrame(() => {
+                expandedImage.style.transition = 'transform 0.18s ease, opacity 0.18s ease';
+                expandedImage.style.transform = 'translateX(0)';
+                expandedImage.style.opacity = '1';
+            });
+
+            window.setTimeout(() => {
+                isSwipeAnimating = false;
+                resetSwipeStyles();
+            }, 190);
+        }, 140);
+    }, { passive: true });
+
+    modal.addEventListener('touchcancel', function() {
+        isTouchSwiping = false;
+        isHorizontalGesture = false;
+        touchDeltaX = 0;
+        resetSwipeStyles();
     }, { passive: true });
 
     // Close modal on Escape key
